@@ -32,7 +32,14 @@ struct VirtualFramebuffer;
 class FramebufferManager;
 class DepalShaderCache;
 class ShaderManager;
-class DrawEngineGLES;
+
+enum TextureFiltering {
+	AUTO = 1,
+	NEAREST = 2,
+	LINEAR = 3,
+	LINEARFMV = 4,
+    HYBRID = 5,
+};
 
 inline bool UseBGRA8888() {
 	// TODO: Other platforms?  May depend on vendor which is faster?

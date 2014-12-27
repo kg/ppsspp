@@ -375,6 +375,90 @@ static const GLuint MagFiltGL[2] = {
 	GL_LINEAR
 };
 
+void TextureCache::GetSamplingParams(int &minFilt, int &magFilt, bool &sClamp, bool &tClamp, float &lodBias, int maxLevel) {
+    int iTexFiltering = g_Config.iTexFiltering;
+    bool isHybrid = (iTexFiltering == HYBRID);
+
+	minFilt = gstate.texfilter & 0x7;
+	magFilt = (gstate.texfilter>>8) & 1;
+	sClamp = gstate.isTexCoordClampedS();
+	tClamp = gstate.isTexCoordClampedT();
+
+	bool noMip = (gstate.texlevel & 0xFFFFFF) == 0x000001 || (gstate.texlevel & 0xFFFFFF) == 0x100001 ;  // Fix texlevel at 0
+
+    // Hybrid texture filter selection based on heuristics
+    if (isHybrid) {
+        // Pulled into locals so debugging is easier
+        bool alphaTest = gstate.isAlphaTestEnabled();
+        bool alphaBlend = gstate.isAlphaBlendEnabled();
+        bool cull = gstate.isCullEnabled();
+        bool depthWrite = gstate.isDepthWriteEnabled();
+        bool depthTest = gstate.isDepthTestEnabled();
+        bool lighting = gstate.isLightingEnabled();
+        bool clampS = gstate.isTexCoordClampedS();
+        bool clampT = gstate.isTexCoordClampedT();
+
+        if (
+            // We specifically care about alpha testing being enabled for sprites.
+            // Blending might be active but doesn't matter. We don't *just* want to check for blending
+            //  since that will probably pick up post-processing and other effects.
+            alphaTest &&
+            // Backface culling for UI makes no sense
+            !cull &&
+            // UI/HUD culled against depth is unusual
+            !depthTest &&
+            // Lighting is uncommon for UI/HUD
+            !lighting &&
+            // Wrapping is uncommon for UI/HUD
+            (clampS && clampT)
+        ) {
+            // Force nearest-neighbor filtering since the heuristic says this is probably a 2D bitmap
+            iTexFiltering = NEAREST;
+        } else {
+            iTexFiltering = LINEARFMV;
+        }
+    }
+
+	if (maxLevel == 0) {
+		// Enforce no mip filtering, for safety.
+		minFilt &= 1; // no mipmaps yet
+		lodBias = 0.0f;
+	} else {
+		// Texture lod bias should be signed.
+		lodBias = (float)(int)(s8)((gstate.texlevel >> 16) & 0xFF) / 16.0f;
+	}
+
+	if (iTexFiltering == LINEARFMV && g_iNumVideos > 0 && (gstate.getTextureDimension(0) & 0xF) >= 9) {
+		magFilt |= 1;
+		minFilt |= 1;
+	}
+	if (iTexFiltering == LINEAR && (!gstate.isColorTestEnabled() || IsColorTestTriviallyTrue())) {
+		// TODO: IsAlphaTestTriviallyTrue() is unsafe here.  vertexFullAlpha is not calculated yet.
+		if (!gstate.isAlphaTestEnabled() || IsAlphaTestTriviallyTrue()) {
+			magFilt |= 1;
+			minFilt |= 1;
+		}
+	}
+
+	bool forceNearest = iTexFiltering == NEAREST;
+	// Force Nearest when color test enabled and rendering resolution greater than 480x272
+	if ((gstate.isColorTestEnabled() && !IsColorTestTriviallyTrue()) && g_Config.iInternalResolution != 1 && gstate.isModeThrough()) {
+		// Some games use 0 as the color test color, which won't be too bad if it bleeds.
+		// Fuchsia and green, etc. are the problem colors.
+		if (gstate.getColorTestRef() != 0) {
+			forceNearest = true;
+		}
+	}
+	if (forceNearest) {
+		magFilt &= ~1;
+		minFilt &= ~1;
+	}
+
+	if (!g_Config.bMipMap || noMip) {
+		minFilt &= 1;
+	}
+}
+
 // This should not have to be done per texture! OpenGL is silly yo
 void TextureCache::UpdateSamplingParams(TexCacheEntry &entry, bool force) {
 	int minFilt;

@@ -331,6 +331,7 @@
 #define ID_FILE_DUMPFRAMES               40165
 #define ID_FILE_USEFFV1                  40166
 #define ID_FILE_DUMPAUDIO                40167
+#define ID_OPTIONS_HYBRIDFILTERING       40168
 
 // Dummy option to let the buffered rendering hotkey cycle through all the options.
 #define ID_OPTIONS_BUFFEREDRENDERINGDUMMY 40500
@@ -343,7 +344,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        256
-#define _APS_NEXT_COMMAND_VALUE         40165
+#define _APS_NEXT_COMMAND_VALUE         40169
 #define _APS_NEXT_CONTROL_VALUE         1200
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
