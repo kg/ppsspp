@@ -33,14 +33,6 @@ class FramebufferManager;
 class DepalShaderCache;
 class ShaderManager;
 
-enum TextureFiltering {
-	AUTO = 1,
-	NEAREST = 2,
-	LINEAR = 3,
-	LINEARFMV = 4,
-    HYBRID = 5,
-};
-
 inline bool UseBGRA8888() {
 	// TODO: Other platforms?  May depend on vendor which is faster?
 #ifdef _WIN32
@@ -48,6 +40,9 @@ inline bool UseBGRA8888() {
 #endif
 	return false;
 }
+
+// Local mutable cache
+extern int g_iTexFiltering;
 
 class TextureCache : public TextureCacheCommon {
 public:

@@ -79,13 +79,52 @@ int TextureCacheCommon::AttachedDrawingHeight() {
 	return 0;
 }
 
+extern int g_iTexFiltering;
+
 void TextureCacheCommon::GetSamplingParams(int &minFilt, int &magFilt, bool &sClamp, bool &tClamp, float &lodBias, u8 maxLevel, u32 addr) {
+    g_iTexFiltering = g_Config.iTexFiltering;
+
 	minFilt = gstate.texfilter & 0x7;
 	magFilt = (gstate.texfilter >> 8) & 1;
 	sClamp = gstate.isTexCoordClampedS();
 	tClamp = gstate.isTexCoordClampedT();
 
 	bool noMip = (gstate.texlevel & 0xFFFFFF) == 0x000001 || (gstate.texlevel & 0xFFFFFF) == 0x100001 ;  // Fix texlevel at 0
+    bool isHybrid = (g_iTexFiltering == TEX_FILTER_3RDBIRTHDAY);
+
+    // Hybrid texture filter selection based on heuristics
+    if (isHybrid) {
+        // Pulled into locals so debugging is easier
+        bool alphaTest = gstate.isAlphaTestEnabled();
+        bool alphaBlend = gstate.isAlphaBlendEnabled();
+        bool cull = gstate.isCullEnabled();
+        bool depthWrite = gstate.isDepthWriteEnabled();
+        bool depthTest = gstate.isDepthTestEnabled();
+        bool lighting = gstate.isLightingEnabled();
+        bool clampS = gstate.isTexCoordClampedS();
+        bool clampT = gstate.isTexCoordClampedT();
+
+        if (
+            // We specifically care about alpha testing being enabled for sprites.
+            // Blending might be active but doesn't matter. We don't *just* want to check for blending
+            //  since that will probably pick up post-processing and other effects.
+            alphaTest &&
+            // Backface culling for UI makes no sense
+            !cull &&
+            // UI/HUD culled against depth is unusual
+            !depthTest &&
+            // Lighting is uncommon for UI/HUD
+            !lighting &&
+            // Wrapping is uncommon for UI/HUD
+            (clampS && clampT)
+            ) {
+            // Force nearest-neighbor filtering since the heuristic says this is probably a 2D bitmap
+            g_iTexFiltering = TEX_FILTER_NEAREST;
+        }
+        else {
+            g_iTexFiltering = TEX_FILTER_LINEAR_VIDEO;
+        }
+    }
 
 	if (maxLevel == 0) {
 		// Enforce no mip filtering, for safety.
@@ -103,13 +142,14 @@ void TextureCacheCommon::GetSamplingParams(int &minFilt, int &magFilt, bool &sCl
 			minFilt |= 1;
 		}
 	}
-	if (g_Config.iTexFiltering == TEX_FILTER_LINEAR && (!gstate.isColorTestEnabled() || IsColorTestTriviallyTrue())) {
+	if (g_iTexFiltering == TEX_FILTER_LINEAR && (!gstate.isColorTestEnabled() || IsColorTestTriviallyTrue())) {
 		if (!gstate.isAlphaTestEnabled() || IsAlphaTestTriviallyTrue()) {
 			magFilt |= 1;
 			minFilt |= 1;
 		}
 	}
-	bool forceNearest = g_Config.iTexFiltering == TEX_FILTER_NEAREST;
+
+	bool forceNearest = g_iTexFiltering == TEX_FILTER_NEAREST;
 	// Force Nearest when color test enabled and rendering resolution greater than 480x272
 	if ((gstate.isColorTestEnabled() && !IsColorTestTriviallyTrue()) && g_Config.iInternalResolution != 1 && gstate.isModeThrough()) {
 		// Some games use 0 as the color test color, which won't be too bad if it bleeds.

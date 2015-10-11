@@ -40,6 +40,8 @@ extern FormatBuffer depthbuf;
 
 extern u32 clut[4096];
 
+extern int g_iTexFiltering;
+
 namespace Rasterizer {
 
 //static inline int orient2d(const DrawingCoords& v0, const DrawingCoords& v1, const DrawingCoords& v2)
@@ -1494,10 +1496,10 @@ void DrawLine(const VertexData &v0, const VertexData &v1)
 	u8 *texptr[8] = {NULL};
 
 	int magFilt = (gstate.texfilter>>8) & 1;
-	if (g_Config.iTexFiltering > 1) {
-		if (g_Config.iTexFiltering == 2) {
+	if (g_iTexFiltering > 1) {
+		if (g_iTexFiltering == 2) {
 			magFilt = 0;
-		} else if (g_Config.iTexFiltering == 3) {
+		} else if (g_iTexFiltering == 3) {
 			magFilt = 1;
 		}
 	}
