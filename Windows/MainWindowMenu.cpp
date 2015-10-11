@@ -888,6 +888,7 @@ namespace MainWindow {
 		case ID_OPTIONS_NEARESTFILTERING:      setTexFiltering(TEX_FILTER_NEAREST); break;
 		case ID_OPTIONS_LINEARFILTERING:       setTexFiltering(TEX_FILTER_LINEAR); break;
 		case ID_OPTIONS_LINEARFILTERING_CG:    setTexFiltering(TEX_FILTER_LINEAR_VIDEO); break;
+        case ID_OPTIONS_HYBRIDFILTERING:       setTexFiltering(TEX_FILTER_3RDBIRTHDAY); break;
 
 		case ID_OPTIONS_BUFLINEARFILTER:       setBufFilter(SCALE_LINEAR); break;
 		case ID_OPTIONS_BUFNEARESTFILTER:      setBufFilter(SCALE_NEAREST); break;
@@ -1107,8 +1108,8 @@ namespace MainWindow {
 		};
 		if (g_Config.iTexFiltering < TEX_FILTER_AUTO)
 			g_Config.iTexFiltering = TEX_FILTER_AUTO;
-		else if (g_Config.iTexFiltering > TEX_FILTER_LINEAR_VIDEO)
-			g_Config.iTexFiltering = TEX_FILTER_LINEAR_VIDEO;
+		else if (g_Config.iTexFiltering > TEX_FILTER_3RDBIRTHDAY)
+			g_Config.iTexFiltering = TEX_FILTER_3RDBIRTHDAY;
 
 		for (int i = 0; i < ARRAY_SIZE(texfilteringitems); i++) {
 			CheckMenuItem(menu, texfilteringitems[i], MF_BYCOMMAND | ((i + 1) == g_Config.iTexFiltering ? MF_CHECKED : MF_UNCHECKED));
