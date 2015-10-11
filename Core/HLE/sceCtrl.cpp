@@ -97,7 +97,8 @@ static bool emuRapidFire = false;
 static u32 emuRapidFireFrames = 0;
 
 // These buttons are not affected by rapid fire (neither is analog.)
-const u32 CTRL_EMU_RAPIDFIRE_MASK = CTRL_UP | CTRL_DOWN | CTRL_LEFT | CTRL_RIGHT;
+// HACK: Don't rapidfire L trigger
+const u32 CTRL_EMU_RAPIDFIRE_MASK = CTRL_UP | CTRL_DOWN | CTRL_LEFT | CTRL_RIGHT | CTRL_LTRIGGER;
 
 static void __CtrlUpdateLatch()
 {
@@ -106,7 +107,7 @@ static void __CtrlUpdateLatch()
 	// Copy in the current data to the current buffer.
 	ctrlBufs[ctrlBuf] = ctrlCurrent;
 	u32 buttons = ctrlCurrent.buttons;
-	if (emuRapidFire && (emuRapidFireFrames % 10) < 5)
+	if (emuRapidFire && (emuRapidFireFrames % 8) < 4)
 	{
 		ctrlBufs[ctrlBuf].buttons &= CTRL_EMU_RAPIDFIRE_MASK;
 		buttons &= CTRL_EMU_RAPIDFIRE_MASK;
