@@ -25,6 +25,7 @@
 #include "GPU/GPUInterface.h"
 #include "GPU/GPUState.h"
 #include "GPU/GLES/FBO.h"
+#include "GPU/GLES/DrawEngineGLES.h"
 #include "GPU/GLES/TextureScaler.h"
 #include "GPU/Common/TextureCacheCommon.h"
 
